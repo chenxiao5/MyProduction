@@ -9,5 +9,5 @@
 
 
 
-[canvas小游戏]:https://github.com/chenxiao5/MyProduction/src/canvasMaze
-[canvas小游戏demo]:http://htmlpreview.github.com/https://github.com/chenxiao5/MyProduction/src/canvasMaze/demo.html
+[canvas小游戏]:https://github.com/chenxiao5/MyProduction/tree/master/src/canvasMaze
+[canvas小游戏demo]:http://htmlpreview.github.com/https://github.com/chenxiao5/MyProduction/tree/master/src/canvasMaze/demo.html
