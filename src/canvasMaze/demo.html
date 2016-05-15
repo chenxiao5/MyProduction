@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+	<canvas id="canvas">
+		对不起，你的浏览器版本太低了！
+	</canvas>
+	<script type="text/javascript">
+		window.onload = function() {
+
+			/**
+			  * @file: canvas模拟迷宫小游戏
+			  * @Author: minfive
+			  * @Date:   2016-05-15 
+			  * @Last Modified by:   minfive
+			  * @Last Modified time: 2016-05-15
+			  */
+			(function() {
+				// 常量配置
+				var IMG_MAZE_URL = "迷宫.jpg",
+					 IMG_SELF_URL = "笑脸.png",
+					 CANVAS_CLASS = "canvas",
+					 SPEED = 4;
+
+				// 公用变量
+				var canvas = document.getElementById("canvas"),
+					 imgMaze = new Image(),
+					 imgSelf = new Image(),
+					 context = null,
+					 mazeW = 0,
+					 mazeH = 0,
+					 selfX = 0,
+					 selfY = 0,
+					 selfW = 0,
+					 selfH = 0,
+					 isOnloadMaze = false;
+				
+				// 初始化程序
+				init();
+				// *******************工具函数**********************
+
+				// 绘制圆角矩形
+				function drawRoundRect(cxt, x, y, width, height, radius) {
+					cxt.beginPath();
+					cxt.arc(x + radius, y + radius, radius, Math.PI, Math.PI * 3 / 2);
+					cxt.lineTo(x + width - radius, y);
+					cxt.arc(x + width - radius, y + radius, radius, Math.PI * 3 / 2, 0);
+					cxt.lineTo(x + width, y + height - radius);
+					cxt.arc(x + width - radius, y + height - radius, radius, 0, Math.PI * 1 / 2);
+					cxt.lineTo(x + radius, y + height);
+					cxt.arc(x + radius, y + height - radius, radius, Math.PI * 1 / 2, Math.PI);
+					cxt.lineTo(x, y + radius);
+					cxt.closePath();
+				};
+
+				// *******************项目函数********************
+
+				// 初始化整个游戏
+				function init() {
+
+					if (canvas.getContext) {
+						context = canvas.getContext("2d");
+						addKeyBoardEvent();
+						drawAll();
+					} else {
+						alert("不好意思，您的浏览器不支持canvas");
+					}
+				};
+
+				// 调整canvas画布的大小
+				function setCanvasSize(width, height) {
+					
+					canvas.width = width;
+					canvas.height = height;
+					canvas.classList.add(CANVAS_CLASS);
+				};
+
+				// 绘制地图
+				function drawMaze() {
+					imgMaze.onload = function() {
+						
+						setCanvasSize(this.width, this.height);
+
+						mazeW = this.width;
+						mazeH = this.height;
+						isOnloadMaze = true;
+
+						context.drawImage(imgMaze, 0, 0);
+						context.stroke();
+					};
+					imgMaze.src = IMG_MAZE_URL;
+				};
+
+				// 绘制目标
+				function drawSelf() {
+					imgSelf.onload = function() {
+						selfW = this.width;
+						selfH = this.height;
+
+						// 初始化目标的位置
+						if (isOnloadMaze) {
+
+							if (!selfX && !selfY) {
+								selfX = mazeW / 2 - selfW / 2;
+								selfY = mazeH / 2 - selfH / 2;
+							}
+
+							context.drawImage(imgSelf, selfX, selfY);
+							context.stroke();
+						}
+					};
+
+					imgSelf.src = IMG_SELF_URL;
+				};
+
+				// 绘制整个界面
+				function drawAll() {
+					var requestAnimationFrame = window.requestAnimationFrame ||
+															window.mozRequestAnimationFrame ||
+															window.webkitRequestAnimationFrame ||
+															window.msRequestAnimationFrame;
+
+					function draw() {
+						// 绘制地图
+						drawMaze();
+						// 绘制目标
+						drawSelf();
+
+						// 重绘
+						requestAnimationFrame(draw);
+					};
+
+					requestAnimationFrame(draw);
+				};
+
+				// 检测是否配到墙壁
+				function checkForCollision(x, y) {
+
+					var imgData = context.getImageData(x - 1, y - 1, selfW + 2, selfH + 2),
+						 pixels = imgData.data,
+						 red,
+						 blue,
+						 green;
+
+					for (var i = pixels.length; i > 0; i -= 4) {
+						red = pixels[i];
+						green = pixels[i + 1];
+						blue = pixels[i + 2];
+
+						if (red == 1 && green == 0 && blue == 1) {
+							return false;
+						}
+					}
+					return true;
+				};
+
+				// 目标移动函数
+				function selfMove(eX, eY) {
+
+					var newX = selfX + eX,
+						 newY = selfY + eY;
+
+					// 改变目标的位置
+					function changeSelf(x, y) {
+						selfX = x;
+						selfY = y;
+					};
+
+					if (checkForCollision(newX, newY)) {
+						changeSelf(newX, newY);
+					} else {
+						for (var i = (Math.abs(eX) - 1); i > 0; i--) {
+							var newI = i + selfX;
+							
+							if (eX < 0) {
+								newI = -1 * i + selfX;
+							}
+
+							if (checkForCollision(newI, newY)) {
+								changeSelf(newI, newY);
+								continue;
+							}
+						}
+						for (var j = (Math.abs(eY) - 1); j > 0; j--) {
+							var newJ = j + selfY;
+
+							if (eY < 0) {
+								newJ = -1 * j + selfY;
+							}
+
+							if (checkForCollision(newX, newJ)) {
+								changeSelf(newX, newJ);
+								continue;
+							}
+						}
+					}
+				};
+
+				// 键盘事件
+				function keyBoardEvent(event) {
+
+					var code = event.keyCode;
+
+					if (isOnloadMaze && selfY === mazeH) {
+						alert("恭喜过关了");
+						return ;
+					}
+
+					switch (code) {
+						case 38:
+							selfMove(0, -1 * SPEED);
+							break;
+						case 40:
+							selfMove(0, SPEED);
+							break;
+						case 37:
+							selfMove(-1 * SPEED, 0);
+							break;
+						case 39:
+							selfMove(SPEED, 0);
+							break;
+						default:;
+					}
+				};
+
+				// 添加键盘事件
+				function addKeyBoardEvent() {
+					document.addEventListener("keydown", keyBoardEvent, false);
+				};
+			})();
+		};
+	</script>
+</body>
+</html>
